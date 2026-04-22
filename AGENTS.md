@@ -1,53 +1,58 @@
-# Repository Guidelines
+# LiNKtrend Development Standards
 
-## Project Structure & Module Organization
+This file provides universal guidance for any AI agent or IDE working in this repository.
+For full rules, see `.cursor/rules/` (Cursor) or `.agent/` (Antigravity).
 
-This is a Nx monorepo with Bun package manager.
+## Identity
 
-- `apps/builder/` - Visual flow editor (Running on port 3000)
-- `apps/viewer/` - Runtime that executes bots (Running on port 3001)
-- `apps/landing-page/` - Commercial website landing page
-- `apps/workflows/` - Durable workflows server
-- `apps/docs/` - Documentation
-- `packages/` - All feature-driven modules, shared libs, schemas, UI package.
+LiNKtrend is an AI-native venture studio. The Chairman is the sole human operator (non-technical).
+All other roles are AI agents. See `.cursor/rules/00-identity.mdc` for full context.
 
-## Commands
+## Git Workflow (SOP v2)
 
-All scripts must be ran with `bunx nx`:
+- Branch format: `dev/<machine><ide>` (e.g., `dev/minicodex`)
+- Flow: `dev/*` → PR to `staging` → PR to `main`
+- No direct pushes to `staging` or `main`
+- Conventional commits: `type(scope): summary`
+- Forks (`link-*`): modify freely, never push upstream. Upstream sync lands in `staging`.
 
-- Typescript project references can be automatically updated with `bunx nx sync`.
-- Most of the scripts are inferred with nx plugins. A few examples:
-  - fastest way to typecheck `builder` and/or `viewer`: run root `bunx nx typecheck` (runs `tsc --build --emitDeclarationOnly`)
-  - typecheck a particular package: `bunx nx typecheck package_name`.
-  - test a package: `bunx nx test package_name`
-  - typecheck all afffected packages: `bunx nx affected -t typecheck` (**IMPORTANT**: Rely first on IDE's TS server diagnostics first for faster feedback loop)
-- To check format and lint, run: `bunx nx format-and-lint` (with `--fix` to run autofix)
-- Never run plain `bunx tsc`, use `bunx nx`
-- Avoid running multiple Vitest test targets in a single Nx command such as `bunx nx run-many -t test` or `bunx nx affected -t test`. Each Nx test target starts its own Vitest process and its own global setup.
-- When multiple Vitest projects need to share the same global setup and database container, run the root workspace test target instead: `bunx nx test`.
-- To run one Vitest project through the shared root runner, use `bunx nx test <project-name>`.
+## Secrets
 
-## Coding style
+- All secrets in Google Secret Manager (GSM)
+- Naming: `LINKTREND_[SERVICE]_[ENV]_[RESOURCE]_[IDENTIFIER]`
+- Never commit secrets. Use `${ENV_VAR}` placeholders.
 
-- Write Effect code whenever possible. We use Effect V4 Beta. **IMPORTANT** Always read through `opensrc/repos/github.com/Effect-TS/effect-smol/LLMS.md` and useful linked docs before writing Effect code. Never guess at Effect patterns - check the guide first and follow it religiously.
-- Never use `as`. You should always narrow / parse the value to get the right type.
-- Rely heavily on type inference, we tend not to declare types.
-- Prefer files exporting a single primary function and the file name should match the exported function name. On that file, the main exported function is at the top while local helpers are at the bottom.
-- Use very explicit variable names.
-- Extract a helper function only if the logic is used at least twice in the main function.
-- Declare a variable only if it is used at least twice.
+## Quality
 
-## Source Code Reference
+- TypeScript strict mode. ESLint + Prettier mandatory.
+- Tailwind CSS for styling. shadcn/ui for primitives.
+- Complete, shippable code only — no placeholders or TODOs.
+- All exports require JSDoc.
 
-Source code for dependencies is available in `opensrc/` for deeper understanding of implementation details.
+## Agent Behavior
 
-See `opensrc/sources.json` for the list of available packages and their versions.
+- **Autonomous execution:** Run terminal commands, tests, and linters yourself; deliver work end-to-end. Do not instruct the Chairman to run routine dev commands unless execution is impossible in-session (missing auth, blocked network, policy, or UI-only step). See `.cursor/rules/05-agent-behavior.mdc`.
+- Plan before coding (Batch Header: scope, inputs, plan, risks) — then **implement** unless the batch is approval-gated or the user asked for plan-only.
+- Small, incremental changes.
+- Ask max 3 questions, then proceed with stated assumptions.
+- On failure, generate a Briefing Pack (structured 12-section report).
+- Communicate in plain English for the non-technical Chairman; “next steps” = what you finished + human-only gaps, not a generic todo list for the operator.
 
-**IMPORTANT** Do not use `node_modules/` as your primary source for understanding dependency internals. When investigating third-party package behavior, first look in `opensrc/` for the matching dependency and version listed in `opensrc/sources.json`. Use `node_modules/` only when you specifically need the installed runtime/distribution output rather than the original source implementation.
+## Other LiNKtrend repositories
 
-## Workflow
+The canonical **`05-agent-behavior.mdc`** and this **`AGENTS.md`** template are copied across LiNKtrend repos in the operator’s `Projects` tree so Cursor/Codex/Antigravity behave consistently. **New** repos should copy `.cursor/rules/05-agent-behavior.mdc` and `AGENTS.md` from LiNKaios (or any sibling that already has them) before the first agent session.
 
-- Use `trash` instead of `rm` when deleting files or directories.
-- To navigate to an authenticated session with Playwright, you need to inject cookies from `apps/viewer/src/test/.auth/user.json`.
-- Do not pass those stored cookie objects directly to `browserContext.addCookies()`. Remap them to a minimal Playwright shape such as `{ name, value, url: "http://localhost:3000", expires, httpOnly, secure, sameSite }`.
-- Prefer `http://localhost:3000` over `127.0.0.1:3000` when reusing that auth file, since the saved session cookies are scoped for `localhost`.
+## Handoff
+
+- Write handoff docs to `docs/handoffs/` when finishing a session.
+- Read latest handoff before starting work on a branch.
+
+## Testing
+
+- Unit (Vitest), Integration (Vitest + mock), E2E (Playwright for web).
+- Every feature/fix ships with tests. Regression tests for bugs.
+
+## Skills
+
+This repo includes skills in `.cursor/skills/`, `.agent/skills/`, and `.codex/skills/`.
+Skills are loaded automatically based on task context.
